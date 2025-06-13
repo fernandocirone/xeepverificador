@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración del Verificador</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        textarea, input {
+            width: 100%;
+            padding: 8px;
+            margin: 6px 0 12px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>Configuración del Verificador</h1>
+
+    <label for="cadena">Cadena de conexión:</label>
+    <textarea id="cadena" rows="3"></textarea>
+
+    <label for="consulta">Consulta SQL:</label>
+    <textarea id="consulta" rows="5"></textarea>
+
+    <button onclick="guardarConfiguracion()">Guardar</button>
+    <p id="mensaje"></p>
+
+    <script>
+        async function cargarConfiguracion() {
+            try {
+                const response = await fetch('/configuracion');
+                const data = await response.json();
+                document.getElementById('cadena').value = data.Cadena || '';
+                document.getElementById('consulta').value = data.Consulta || '';
+            } catch (e) {
+                document.getElementById('mensaje').textContent = 'Error al cargar configuración.';
+            }
+        }
+
+        async function guardarConfiguracion() {
+            const cadena = document.getElementById('cadena').value;
+            const consulta = document.getElementById('consulta').value;
+
+            const response = await fetch('/configuracion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cadena, consulta })
+            });
+
+            if (response.ok) {
+                document.getElementById('mensaje').textContent = 'Configuración guardada correctamente.';
+                document.getElementById('mensaje').className = 'success';
+            } else {
+                document.getElementById('mensaje').textContent = 'Error al guardar.';
+            }
+        }
+
+        cargarConfiguracion();
+    </script>
+</body>
+</html>

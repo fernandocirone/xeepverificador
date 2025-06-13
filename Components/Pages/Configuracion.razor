@@ -1,0 +1,29 @@
+﻿@page "/configuracion"
+
+<h1>Configuración</h1>
+
+<p><strong>Para acceder a la configuración ingresa a una PC en un navegador con la direccion IP:</strong> @ipLocal:8080/configuracion</p>
+
+<button @onclick="Volver">Volver</button>
+
+@code {
+    [Inject] NavigationManager Navigation { get; set; }
+
+    string ipLocal = "Detectando...";
+
+    protected override void OnInitialized()
+    {
+        ObtenerIp();
+    }
+
+    void ObtenerIp()
+    {
+#if ANDROID
+        ipLocal = verificador.Platforms.Android.DeviceInfoService.ObtenerIp();
+#else
+        ipLocal = "Solo disponible en Android.";
+#endif
+    }
+
+    void Volver() => Navigation.NavigateTo("/");
+}

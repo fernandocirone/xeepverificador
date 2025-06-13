@@ -1,0 +1,132 @@
+﻿@page "/"
+@using verificador.Models
+@using verificador.Services
+@using verificador.Data
+@using Microsoft.AspNetCore.Components.Web
+
+<style>
+    .fondo-imagen {
+        background-image: url('Images/fondo.jpg');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .fondo-blanco {
+        background-color: #ffffff;
+    }
+
+    .pagina-contenedor {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .oculto {
+        position: absolute;
+        opacity: 0;
+        height: 0;
+        width: 0;
+    }
+</style>
+
+<!-- Fondo dinámico y contenido centrado -->
+<div class="@((producto != null) ? "fondo-blanco" : "fondo-imagen") d-flex justify-content-center align-items-center pagina-contenedor">
+    <div class="text-center">
+
+        <!-- Input oculto para recibir código del lector -->
+        <InputText @bind-Value="codigoProducto" @oninput="OnCodigoProductoChanged" id="codProducto" class="oculto" autofocus />
+
+        @if (!inicio && producto != null)
+        {
+            <h1 style="font-size: 48px; font-weight: bold;">@producto.descripcion</h1>
+            <h2 style="font-size: 40px; color: green;">$ @producto.precioventa</h2>
+            <h4 style="font-size: 28px;">Código: @producto.codigodebarras</h4>
+        }
+        else if (!inicio && producto == null)
+        {
+            <h1 style="font-size: 48px; color: red;">¡PRODUCTO NO ENCONTRADO!</h1>
+        }
+        else
+        {
+            <h2 style="font-size: 28px; color: white;">Escanee un producto...</h2>
+        }
+    </div>
+</div>
+
+<!-- Zona secreta invisible para acceder a configuración -->
+<div @onclick="IncrementarToqueSecreto"
+     style="position: absolute; bottom: 0; left: 0; width: 60px; height: 60px; z-index: 20;">
+</div>
+
+
+@code {
+    Producto producto;
+    Funciones funciones;
+    string dbPath;
+    string codigoProducto;
+    bool inicio = true;
+
+    int toques = 0;
+    System.Timers.Timer temporizador;
+
+    [Inject] NavigationManager Navigation { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        dbPath = Conexiones.ObtenerPathBD("verificador.db3");
+        funciones = new Funciones(dbPath);
+    }
+
+    private async Task OnCodigoProductoChanged(ChangeEventArgs e)
+    {
+        codigoProducto = e.Value?.ToString();
+
+        if (!string.IsNullOrWhiteSpace(codigoProducto) && codigoProducto.Length >= 5)
+        {
+            inicio = false;
+            await ObtenerProducto();
+        }
+    }
+
+    private async Task ObtenerProducto()
+    {
+        producto = await funciones.ObtenerProductoAsync(codigoProducto.Trim());
+
+        StateHasChanged();
+
+        await Task.Delay(5000);
+        ResetearEstadoInicial();
+    }
+
+    private void ResetearEstadoInicial()
+    {
+        producto = null;
+        codigoProducto = string.Empty;
+        inicio = true;
+        StateHasChanged();
+    }
+
+    private void IncrementarToqueSecreto()
+    {
+        toques++;
+
+        if (toques == 1)
+        {
+            temporizador = new System.Timers.Timer(3000);
+            temporizador.Elapsed += (s, e) =>
+            {
+                toques = 0;
+                temporizador.Stop();
+            };
+            temporizador.AutoReset = false;
+            temporizador.Start();
+        }
+
+        if (toques >= 5)
+        {
+            temporizador?.Stop();
+            toques = 0;
+            Navigation.NavigateTo("/configuracion");
+        }
+    }
+}
